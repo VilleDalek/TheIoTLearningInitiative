@@ -8,8 +8,20 @@ import time
 
 from threading import Thread
 
-def functionDataActuador():
-    print "Data Actuator"
+def functionDataActuador(status):
+    print "Data Actuator status %s" % status
+
+def functionDataActuatorMqttOnMessage(mosq, obj, msg):
+    print "Data Sensor Mqtt Subscribe Message!"
+    functionDataActuador(msg.payload)
+
+def functionDataActuatorMqttSubscribe():
+    mqttclient = paho.Client()
+    mqttclient.on_message = functionDataActuatorMqttOnMessage
+    mqttclient.connect("test.mosquitto.org", 1883, 60)
+    mqttclient.subscribe("IoT101/DataActuator", 0)
+    while mqttclient.loop() == 0:
+        pass
 
 def functionDataSensor():
     netdata = psutil.net_io_counters()
@@ -38,6 +50,9 @@ if __name__ == '__main__':
 
     threadmqttpublish = Thread(target=functionDataSensorMqttPublish)
     threadmqttpublish.start()
+
+    threadmqttsubscribe = Thread(target=functionDataActuatorMqttSubscribe)
+    threadmqttsubscribe.start()
 
     while True:
         print "Hello Internet of Things 101"
